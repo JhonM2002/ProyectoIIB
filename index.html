@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Reserva de Asientos - Cooperativa</title>
   <link rel="stylesheet" href="style.css" />
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
+
 <body>
   <header class="header-fijo">
     <div class="header-contenido">
@@ -14,33 +16,55 @@
         <div id="fecha-hora"></div>
       </h1>
     </div>
-    <nav>
-      <ul>
-        <li><a href="#pasajero">Pasajero</a></li>
-        <li><a href="#viaje">Viaje</a></li>
-        <li><a href="#pago">Pago</a></li>
-        <li><a href="#factura">Factura</a></li>
-      </ul>
-    </nav>
-    
+
   </header>
 
   <main>
+    <div class="progress-bar">
+      <div class="step active" data-step="0">
+        <div class="circle">1</div>
+        <p>Pasajero</p>
+      </div>
+      <div class="line"></div>
+      <div class="step" data-step="1">
+        <div class="circle">2</div>
+        <p>Viaje</p>
+      </div>
+      <div class="line"></div>
+      <div class="step" data-step="2">
+        <div class="circle">3</div>
+        <p>Pago</p>
+      </div>
+    </div>
     <form id="formulario" novalidate>
       <!-- 1. Datos del Pasajero -->
       <section id="pasajero" class="form-section">
-  <h2>Datos del Pasajero</h2>
-  <label for="cedula">Cédula:</label>
-  <input type="text" id="cedula" name="cedula" placeholder="Cédula" required />
-  <label for="nombre">Nombre:</label>
-  <input type="text" id="nombre" name="nombre" placeholder="Nombre completo" required />
-  <label for="direccion">Dirección:</label>
-  <input type="text" id="direccion" name="direccion" placeholder="Dirección" required />
-  <label for="telefono">Celular:</label>
-  <input type="tel" id="telefono" name="telefono" placeholder="Celular" required />
-  <label for="email">Correo electrónico:</label>
-  <input type="email" id="email" name="email" placeholder="Correo electrónico" required />
-</section>
+        <h2>Datos del Pasajero</h2>
+
+        <label for="cedula">Cédula:</label>
+        <input type="text" id="cedula" name="cedula" placeholder="Cédula" required />
+        <div class="error-message" id="cedula-error"></div>
+
+        <label for="nombre">Nombre:</label>
+        <input type="text" id="nombre" name="nombre" placeholder="Nombre completo" required />
+        <div class="error-message" id="nombre-error"></div>
+
+        <label for="direccion">Dirección:</label>
+        <input type="text" id="direccion" name="direccion" placeholder="Dirección" required />
+        <div class="error-message" id="direccion-error"></div>
+
+        <label for="telefono">Celular:</label>
+        <input type="text" id="telefono" name="telefono" placeholder="Celular" required />
+        <div class="error-message" id="telefono-error"></div>
+
+        <label for="email">Correo electrónico:</label>
+        <input type="email" id="email" name="email" placeholder="Correo electrónico" required />
+        <div class="error-message" id="email-error"></div>
+
+        <div class="navigation-buttons">
+          <button type="button" class="btn-next">Siguiente →</button>
+        </div>
+      </section>
 
       <!-- 2. Datos del Viaje -->
       <section id="viaje" class="form-section">
@@ -81,6 +105,11 @@
         <div id="plano-asientos"></div>
         <p id="contador-asientos">Asientos seleccionados: 0 / 40</p>
         <input type="hidden" name="asientos" id="asientos_hidden">
+
+        <div class="navigation-buttons">
+          <button type="button" class="btn-prev">← Anterior</button>
+          <button type="button" class="btn-next">Siguiente →</button>
+        </div>
       </section>
 
       <!-- 3. Pago -->
@@ -113,21 +142,28 @@
             </div>
           </label>
         </div>
-        <button type="submit" class="btn btn-confirmar">Confirmar y Pagar</button>
+        <div class="navigation-buttons">
+          <button type="button" class="btn-prev">← Anterior</button>
+          <button type="submit" class="btn btn-confirmar">Confirmar y Pagar</button>
+        </div>
       </section>
 
       <!-- 4. Factura -->
       <section id="factura" class="form-section">
         <h2>Factura Generada</h2>
         <div id="factura-contenido"></div>
+
+        <div class="form-section">
+          <a href="index.html" class="btn-recargar">Nueva Reservación</a>
+        </div>
       </section>
 
-      <div class="form-section">
-        <button type="button" onclick="nuevaReservacion()">Nueva Reservación</button>
-      </div>
+
+
     </form>
   </main>
 
   <script src="script.js"></script>
 </body>
+
 </html>

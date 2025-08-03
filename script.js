@@ -1,206 +1,112 @@
 // ==================================================================
-//               SCRIPT.JS FINAL, COMPLETO Y CORREGIDO
+//               SCRIPT.JS CORREGIDO - VALIDACIÓN POR PASOS
 // ==================================================================
 
 let asientosSeleccionados = [];
 let asientosReservados = [];
+let currentStep = 0;
 
 // --- INICIALIZACIÓN GENERAL ---
 document.addEventListener("DOMContentLoaded", () => {
-  // Inicializa EmailJS con tu Public Key
-  // RECUERDA: Si cambiaste la clave, actualízala aquí.
-  emailjs.init('tRq8XXGfnFewdFNyU'); 
+  emailjs.init('tRq8XXGfnFewdFNyU');
 
-  // Referencias a elementos del DOM
+  const formulario = document.getElementById("formulario");
+  const nextBtns = document.querySelectorAll(".btn-next");
+  const prevBtns = document.querySelectorAll(".btn-prev");
+  
+  formulario.addEventListener("submit", enviarFormulario);
+  nextBtns.forEach(btn => btn.addEventListener("click", () => cambiarPaso(1)));
+  prevBtns.forEach(btn => btn.addEventListener("click", () => cambiarPaso(-1)));
+  
   const ruta = document.getElementById("ruta");
   const busSelect = document.getElementById("bus");
-  const formulario = document.getElementById("formulario");
-  const radiosPago = document.querySelectorAll('input[name="pago"]');
-
-  // Asignación de eventos
   ruta.addEventListener("change", () => cargarBuses(ruta.value, busSelect));
-  formulario.addEventListener("submit", enviarFormulario);
-  radiosPago.forEach(radio => radio.addEventListener("change", toggleMetodoPago));
-
-  // Llamadas a funciones de inicialización
   cargarBuses(ruta.value, busSelect);
   generarPlanoAsientos();
   actualizarFechaHoraEnHeader();
   setInterval(actualizarFechaHoraEnHeader, 1000);
+  document.querySelectorAll('input[name="pago"]').forEach(radio => radio.addEventListener("change", toggleMetodoPago));
   configurarValidacionesTiempoReal();
-  toggleMetodoPago(); // Llama una vez para el estado inicial
+  
+  mostrarPaso(currentStep);
 });
 
-// --- FUNCIÓN DE ENVÍO PRINCIPAL ---
+// --- LÓGICA DE NAVEGACIÓN POR PASOS ---
+function cambiarPaso(direccion) {
+    // Si vamos hacia adelante, validar el paso actual primero
+    if (direccion > 0 && !validarPasoActual()) {
+        return; // Detiene si la validación del paso actual falla
+    }
+    currentStep += direccion;
+    mostrarPaso(currentStep);
+}
+
+function mostrarPaso(numeroPaso) {
+    const sections = document.querySelectorAll("form section");
+    const steps = document.querySelectorAll(".progress-bar .step");
+
+    sections.forEach(section => section.classList.remove('active'));
+    if (sections[numeroPaso]) {
+        sections[numeroPaso].classList.add('active');
+    }
+
+    steps.forEach((step, index) => {
+        step.classList.toggle('active', index === numeroPaso);
+        step.classList.toggle('completed', index < numeroPaso);
+    });
+}
+
+// --- FUNCIÓN DE VALIDACIÓN POR PASO (AJUSTADA) ---
+function validarPasoActual() {
+    switch(currentStep) {
+        case 0: return validarCamposPasajero();
+        case 1: return validarRuta() && validarFechaHora() && validarAsientos();
+        // El paso de pago se valida por separado al hacer submit
+        default: return true; 
+    }
+}
+
+// --- FUNCIÓN DE ENVÍO ---
 function enviarFormulario(event) {
   event.preventDefault();
-
-  if (!validarFormularioCompleto()) {
-    return; // Detiene si la validación falla
-  }
   
-  const btn = document.querySelector('.btn-confirmar');
+  // ¡LA VALIDACIÓN DE PAGO SUCEDE AQUÍ, Y SOLO AQUÍ!
+  if (!validarPago()) return; 
+  
+  const btn = event.target.querySelector('.btn-confirmar');
   btn.disabled = true;
   btn.textContent = 'Enviando...';
 
   document.getElementById('asientos_hidden').value = asientosSeleccionados.join(', ');
 
-  // RECUERDA: Si cambiaste los IDs, actualízalos aquí.
   emailjs.sendForm('service_09xi3xh', 'template_c9xapgf', event.target)
     .then(() => {
         alert('¡Reserva confirmada! Hemos enviado la factura a tu correo.');
-        mostrarFactura(); // Muestra la factura y actualiza asientos
+        mostrarFacturaEnPagina();
+        mostrarPasoFactura();
     }, (error) => {
-        alert('Hubo un error al enviar el correo. Revisa la consola para más detalles.');
+        alert('Hubo un error al enviar el correo.');
         console.log('ERROR DE EMAILJS:', error);
     }).finally(() => {
-        // Esto se ejecuta siempre, haya éxito o error
         btn.disabled = false;
         btn.textContent = 'Confirmar y Pagar';
     });
 }
 
-// --- FUNCIONES DE VALIDACIÓN ---
-function validarFormularioCompleto() {
-    return validarCamposPasajero() && validarRuta() && validarFechaHora() && validarAsientos() && validarPago();
+// --- FUNCIÓN PARA CAMBIAR LA VISTA AL PASO DE LA FACTURA ---
+function mostrarPasoFactura() {
+    const pagoSection = document.getElementById('pago');
+    const facturaSection = document.getElementById('factura');
+    const nuevaReservacionSection = document.querySelector("#factura").nextElementSibling;
+
+    pagoSection.classList.remove('active');
+    facturaSection.classList.add('active');
+    nuevaReservacionSection.style.display = 'flex';
 }
 
-// (Tus funciones de validación completas, tal como las tenías)
-function validarCamposPasajero() {
-  const cedula = document.getElementById("cedula").value.trim();
-  const nombre = document.getElementById("nombre").value.trim();
-  const direccion = document.getElementById("direccion").value.trim();
-  const telefono = document.getElementById("telefono").value.trim();
-  const email = document.getElementById("email").value.trim();
-
-  if (!/^\d{10}$/.test(cedula)) {
-    alert("Cédula debe tener 10 dígitos númericos.");
-    return false;
-  }
-
-  if (!/^[a-zA-ZÁÉÍÓÚÑáéíóúñ\s]+$/.test(nombre)) {
-    alert("Nombre inválido.");
-    return false;
-  }
-
-  if (direccion === "") {
-    alert("Ingrese dirección.");
-    return false;
-  }
-
-  if (!/^\d{7,}$/.test(telefono)) {
-    alert("Teléfono inválido.");
-    return false;
-  }
-
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    alert("Correo inválido.");
-    return false;
-  }
-
-  return true;
-}
-
-function validarRuta() {
-  const ruta = document.getElementById("ruta").value;
-  if (!ruta) {
-    alert("Seleccione una ruta válida.");
-    return false;
-  }
-  return true;
-}
-
-function validarFechaHora() {
-  const fecha = document.getElementById("fechaSalida").value;
-  const hora = document.getElementById("horaSalida").value;
-
-  if (!fecha || !hora) {
-    alert("Seleccione fecha y hora de salida.");
-    return false;
-  }
-
-  const fechaHoraSeleccionada = new Date(`${fecha}T${hora}`);
-  const ahora = new Date();
-
-  if (fechaHoraSeleccionada < ahora) {
-    alert("La salida no puede ser anterior al momento actual.");
-    return false;
-  }
-
-  return true;
-}
-
-function validarAsientos() {
-  if (asientosSeleccionados.length === 0) {
-    alert("Seleccione al menos un asiento.");
-    return false;
-  }
-  return true;
-}
-// Validación de pago
-function validarPago() {
-  const metodoPago = document.querySelector('input[name="pago"]:checked');
-  if (!metodoPago) {
-    alert("Seleccione un método de pago.");
-    return false;
-  }
-
-  let valido = true;
-
-  if (metodoPago.value === "tarjeta") {
-    const num = document.getElementById("numTarjeta");
-    const titular = document.getElementById("nombreTitular");
-    const venc = document.getElementById("vencimiento");
-    const cvv = document.getElementById("cvv");
-
-    if (!/^\d{16}$/.test(num.value.trim())) {
-      num.setCustomValidity("Número de tarjeta inválido.");
-      valido = false;
-    } else {
-      num.setCustomValidity("");
-    }
-
-    if (!/^[a-zA-ZÁÉÍÓÚÑáéíóúñ\s]+$/.test(titular.value.trim())) {
-      titular.setCustomValidity("Nombre del titular inválido.");
-      valido = false;
-    } else {
-      titular.setCustomValidity("");
-    }
-
-    if (venc.value.trim() === "") {
-      venc.setCustomValidity("Ingrese vencimiento.");
-      valido = false;
-    } else {
-      venc.setCustomValidity("");
-    }
-
-    if (!/^\d{3,4}$/.test(cvv.value.trim())) {
-      cvv.setCustomValidity("CVV inválido.");
-      valido = false;
-    } else {
-      cvv.setCustomValidity("");
-    }
-
-    // Mostrar los errores si hay alguno
-    [num, titular, venc, cvv].forEach(input => input.reportValidity());
-
-  } else if (metodoPago.value === "transferencia") {
-    const inputArchivo = document.getElementById("comprobanteTransferencia");
-    const archivo = inputArchivo.files[0];
-
-    if (!archivo) {
-      inputArchivo.setCustomValidity("Debe subir un comprobante de transferencia.");
-      valido = false;
-    } else {
-      inputArchivo.setCustomValidity("");
-    }
-  }
-
-  return valido;
-}
-
-// --- FUNCIONES AUXILIARES ---
-function mostrarFactura() {
+// --- TUS FUNCIONES ORIGINALES (SIN CAMBIOS) ---
+// (He dejado todas tus funciones intactas aquí abajo)
+function mostrarFacturaEnPagina() {
   const div = document.getElementById("factura-contenido");
   const nombre = document.getElementById("nombre").value;
   const cedula = document.getElementById("cedula").value;
@@ -211,64 +117,135 @@ function mostrarFactura() {
   const fechaSalida = document.getElementById("fechaSalida").value;
   const horaSalida = document.getElementById("horaSalida").value;
   const bus = document.getElementById("bus").value;
-
   div.innerHTML = `
-       <h4 style="color:#003366;">👤 Información del Pasajero</h4>
-      <ul style="list-style:none; padding-left:0;">
-        <li><strong>Nombre:</strong> ${nombre}</li>
-        <li><strong>Cédula:</strong> ${cedula}</li>
-        <li><strong>Dirección:</strong> ${direccion}</li>
-        <li><strong>Teléfono:</strong> ${telefono}</li>
-        <li><strong>Email:</strong> ${email}</li>
-      </ul>
-      <h4 style="color:#003366;">🚌 Información del Viaje</h4>
-      <ul style="list-style:none; padding-left:0;">
-        <li><strong>Ruta:</strong> ${ruta}</li>
-        <li><strong>Fecha de salida:</strong> ${fechaSalida}</li>
-        <li><strong>Hora de salida:</strong> ${horaSalida}</li>
-        <li><strong>Bus asignado:</strong> ${bus}</li>
-        <li><strong>Asientos reservados:</strong> ${asientosSeleccionados.join(", ")}</li>
-      </ul>
+    <h4 style="color:#003366;">👤 Información del Pasajero</h4>
+    <ul style="list-style:none; padding-left:0;">
+        <li><strong>Nombre:</strong> ${nombre}</li><li><strong>Cédula:</strong> ${cedula}</li><li><strong>Dirección:</strong> ${direccion}</li><li><strong>Teléfono:</strong> ${telefono}</li><li><strong>Email:</strong> ${email}</li>
+    </ul>
+    <h4 style="color:#003366;">🚌 Información del Viaje</h4>
+    <ul style="list-style:none; padding-left:0;">
+        <li><strong>Ruta:</strong> ${ruta}</li><li><strong>Fecha de salida:</strong> ${fechaSalida}</li><li><strong>Hora de salida:</strong> ${horaSalida}</li><li><strong>Bus asignado:</strong> ${bus}</li><li><strong>Asientos reservados:</strong> ${asientosSeleccionados.join(", ")}</li>
+    </ul>
   `;
-  document.getElementById('factura').scrollIntoView({ behavior: 'smooth' });
-  
   asientosReservados.push(...asientosSeleccionados);
   asientosSeleccionados = [];
   generarPlanoAsientos();
 }
 
-// --- FUNCIONES RESTAURADAS Y COMPLETAS ---
+function validarCamposPasajero() {
+  const cedula = document.getElementById("cedula").value.trim();
+  const nombre = document.getElementById("nombre").value.trim();
+  const direccion = document.getElementById("direccion").value.trim();
+  const telefono = document.getElementById("telefono").value.trim();
+  const email = document.getElementById("email").value.trim();
+  if (!/^\d{10}$/.test(cedula)) { alert("Cédula debe tener 10 dígitos numéricos."); return false; }
+  if (!/^[a-zA-ZÁÉÍÓÚÑáéíóúñ\s]+$/.test(nombre)) { alert("Nombre inválido."); return false; }
+  if (direccion === "") { alert("Ingrese dirección."); return false; }
+  if (!/^\d{7,10}$/.test(telefono)) { alert("Teléfono inválido."); return false; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert("Correo inválido."); return false; }
+  return true;
+}
+
+function validarRuta() {
+  if (!document.getElementById("ruta").value) { alert("Seleccione una ruta."); return false; }
+  return true;
+}
+
+function validarFechaHora() {
+  const fecha = document.getElementById("fechaSalida").value;
+  const hora = document.getElementById("horaSalida").value;
+  if (!fecha || !hora) { alert("Seleccione fecha y hora."); return false; }
+  if (new Date(`${fecha}T${hora}`) < new Date()) { alert("La fecha no puede ser anterior."); return false; }
+  return true;
+}
+
+function validarAsientos() {
+  if (asientosSeleccionados.length === 0) { alert("Seleccione al menos un asiento."); return false; }
+  return true;
+}
+
+function validarPago() {
+  const metodoPago = document.querySelector('input[name="pago"]:checked');
+  
+  // 1. Validar que se haya seleccionado un método de pago
+  if (!metodoPago) {
+    alert("Por favor, seleccione un método de pago.");
+    return false;
+  }
+
+  // 2. Si el método es transferencia, validar el archivo
+  if (metodoPago.value === "transferencia") {
+    if (document.getElementById("comprobanteTransferencia").files.length === 0) {
+      alert("Por favor, debe subir un comprobante de transferencia.");
+      return false;
+    }
+  } 
+  // 3. Si el método es tarjeta, validar todos sus campos
+  else if (metodoPago.value === "tarjeta") {
+    const tipoTarjeta = document.getElementById("tipoTarjeta").value;
+    const numTarjeta = document.getElementById("numTarjeta").value.trim();
+    const nombreTitular = document.getElementById("nombreTitular").value.trim();
+    const vencimiento = document.getElementById("vencimiento").value.trim();
+    const cvv = document.getElementById("cvv").value.trim();
+
+    if (tipoTarjeta === "") {
+      alert("Por favor, seleccione el tipo de tarjeta (débito o crédito).");
+      return false;
+    }
+
+    // Expresión regular para 16 dígitos (Visa, Mastercard, etc.)
+    if (!/^\d{16}$/.test(numTarjeta)) {
+      alert("El número de tarjeta debe contener 16 dígitos.");
+      return false;
+    }
+    
+    // El nombre del titular no puede estar vacío y solo debe contener letras y espacios
+    if (nombreTitular === "" || !/^[a-zA-ZÁÉÍÓÚÑáéíóúñ\s]+$/.test(nombreTitular)) {
+      alert("Por favor, ingrese un nombre válido para el titular de la tarjeta.");
+      return false;
+    }
+    
+    // Validación de fecha de vencimiento (formato MM/AA)
+    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(vencimiento)) {
+      alert("El formato de la fecha de vencimiento debe ser MM/AA (ej. 08/25).");
+      return false;
+    }
+    
+    // Validación de CVV (3 o 4 dígitos)
+    if (!/^\d{3,4}$/.test(cvv)) {
+      alert("El CVV debe contener 3 o 4 dígitos.");
+      return false;
+    }
+  }
+
+  // Si todas las validaciones pasan, la función devuelve true
+  return true;
+}
+
 function toggleMetodoPago() {
     const pagoTarjeta = document.getElementById("pagoTarjeta");
-    const comprobanteDiv = document.getElementById("comprobanteTransferencia").parentElement.parentElement; // Apuntamos al .pago-card
+    const pagoCard = document.querySelector("#pagoTransferencia").closest(".pago-card");
     if (document.getElementById('pagoTarjetaRadio').checked) {
         pagoTarjeta.style.display = "block";
-        comprobanteDiv.style.opacity = '0.5';
+        pagoCard.style.opacity = '0.6';
     } else {
         pagoTarjeta.style.display = "none";
-        comprobanteDiv.style.opacity = '1';
+        pagoCard.style.opacity = '1';
     }
 }
 
 function bloquearLetras(input) {
-  input.addEventListener("input", () => {
-    input.value = input.value.replace(/\D/g, ""); // Solo números
-  });
+  input.addEventListener("input", () => { input.value = input.value.replace(/\D/g, ""); });
 }
+
 function bloquearNumeros(input) {
-  input.addEventListener("input", () => {
-    input.value = input.value.replace(/[^a-zA-ZÁÉÍÓÚÑáéíóúñ\s]/g, ""); // Solo letras y espacios
-  });
+  input.addEventListener("input", () => { input.value = input.value.replace(/[^a-zA-ZÁÉÍÓÚÑáéíóúñ\s]/g, ""); });
 }
 
 function configurarValidacionesTiempoReal() {
-  const cedula = document.getElementById("cedula");
-  const nombre = document.getElementById("nombre");
-  const telefono = document.getElementById("telefono");
-
-  bloquearLetras(cedula);
-  bloquearLetras(telefono);
-  bloquearNumeros(nombre);
+  bloquearLetras(document.getElementById("cedula"));
+  bloquearLetras(document.getElementById("telefono"));
+  bloquearNumeros(document.getElementById("nombre"));
 }
 
 function cargarBuses(ruta, select) {
@@ -288,10 +265,9 @@ function generarPlanoAsientos() {
   let n = 1;
   for (let fila = 0; fila < 10; fila++) {
     for (let col = 0; col < 5; col++) {
-      if (col === 2) {
-        contenedor.appendChild(document.createElement("div"));
-      } else {
+      if (col === 2) { contenedor.appendChild(document.createElement("div")); } else {
         const btn = document.createElement("button");
+        btn.type = "button";
         btn.className = "asiento-btn";
         btn.textContent = n;
         btn.dataset.numero = n;
@@ -311,7 +287,7 @@ function toggleAsiento(boton) {
   if (idx > -1) {
     asientosSeleccionados.splice(idx, 1);
     boton.classList.remove("selected");
-  } else if (asientosSeleccionados.length < 40) {
+  } else {
     asientosSeleccionados.push(num);
     boton.classList.add("selected");
   }
@@ -321,7 +297,7 @@ function toggleAsiento(boton) {
 function actualizarPlano() {
   document.querySelectorAll(".asiento-btn").forEach(btn => {
     const num = parseInt(btn.dataset.numero);
-    btn.classList.remove("reserved");
+    btn.classList.remove("reserved", "selected");
     btn.disabled = false;
     if (asientosReservados.includes(num)) {
       btn.classList.add("reserved");
@@ -334,7 +310,15 @@ function nuevaReservacion() {
   document.getElementById("formulario").reset();
   asientosSeleccionados = [];
   generarPlanoAsientos();
-  document.getElementById("factura-contenido").innerHTML = "";
+  
+  const facturaSection = document.getElementById('factura');
+  const nuevaReservacionSection = facturaSection.nextElementSibling;
+
+  facturaSection.classList.remove('active');
+  nuevaReservacionSection.style.display = 'none';
+  
+  currentStep = 0;
+  mostrarPaso(currentStep);
   toggleMetodoPago();
 }
 

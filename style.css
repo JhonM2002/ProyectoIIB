@@ -234,3 +234,131 @@ form section textarea {
   width: 90%;
   max-width: 300px;
 }
+
+/* Oculta todas las secciones por defecto */
+form section {
+  display: none;
+}
+
+/* Muestra solo la sección activa */
+form section.active {
+  display: flex; /* O 'block', dependiendo de tu layout original */
+}
+
+/* Barra de progreso */
+.progress-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 80%;
+  margin: 0 auto 2.5em auto;
+}
+
+.step {
+  text-align: center;
+  color: #aaa;
+  transition: all 0.3s ease;
+  position: relative; /* ¡Añadir esto! */
+  z-index: 2;  
+}
+
+.step .circle {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  color: #aaa;
+  font-weight: bold;
+  margin: 0 auto 5px auto;
+  border: 3px solid #e0e0e0;
+  transition: all 0.3s ease;
+}
+
+.step p {
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
+.line {
+  flex-grow: 1;
+  height: 4px;
+  background-color: #e0e0e0;
+  margin: 0 -10px; /* Ajuste para que se una a los círculos */
+  transform: translateY(-12px); /* Alinea con el centro de los círculos */
+  transition: all 0.3s ease;
+  position: relative; /* Es buena práctica añadirlo también */
+  z-index: 1; 
+}
+
+/* Estilos para el paso activo y completado */
+.step.active .circle {
+  border-color: #007bff;
+  background-color: #007bff;
+  color: white;
+}
+.step.active p {
+  color: #007bff;
+}
+
+.step.completed .circle {
+  border-color: #28a745;
+  background-color: #28a745;
+  color: white;
+}
+.step.completed p {
+  color: #28a745;
+}
+.step.completed + .line {
+    background-color: #28a745;
+}
+
+
+/* Botones de navegación */
+.navigation-buttons {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 400px;
+  margin-top: 1.5em;
+}
+
+/* El botón de la sección de pago ya está estilizado, este es para los nuevos */
+.btn-next, .btn-prev {
+  background-color: #005599;
+}
+.btn-prev {
+  background-color: #6c757d;
+}
+.btn-prev:hover {
+  background-color: #5a6268;
+}
+
+/* Botón de Nueva Reservación que mostraremos al final */
+#nuevaReservacionBtn {
+    display: none; /* Oculto por defecto */
+    margin: 2em auto;
+    background-color: #17a2b8;
+}
+#nuevaReservacionBtn:hover {
+    background-color: #138496;
+}
+
+.btn-recargar {
+  display: inline-block; /* Para que respete el padding y margin */
+  padding: 0.7em 1.5em;
+  margin: 0.5em 1em 0.5em 0;
+  cursor: pointer;
+  text-decoration: none; /* Quita el subrayado del enlace */
+  color: white; /* Color del texto */
+  background-color: #003366; /* Mismo color que tus otros botones */
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+  text-align: center;
+}
+
+.btn-recargar:hover {
+  background-color: #005599; /* Efecto hover */
+}
+
