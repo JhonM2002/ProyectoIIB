@@ -1,95 +1,71 @@
+// ==================================================================
+//               SCRIPT.JS FINAL, COMPLETO Y CORREGIDO
+// ==================================================================
+
 let asientosSeleccionados = [];
 let asientosReservados = [];
 
+// --- INICIALIZACIÓN GENERAL ---
 document.addEventListener("DOMContentLoaded", () => {
+  // Inicializa EmailJS con tu Public Key
+  // RECUERDA: Si cambiaste la clave, actualízala aquí.
+  emailjs.init('tRq8XXGfnFewdFNyU'); 
+
+  // Referencias a elementos del DOM
   const ruta = document.getElementById("ruta");
   const busSelect = document.getElementById("bus");
+  const formulario = document.getElementById("formulario");
+  const radiosPago = document.querySelectorAll('input[name="pago"]');
 
+  // Asignación de eventos
   ruta.addEventListener("change", () => cargarBuses(ruta.value, busSelect));
+  formulario.addEventListener("submit", enviarFormulario);
+  radiosPago.forEach(radio => radio.addEventListener("change", toggleMetodoPago));
+
+  // Llamadas a funciones de inicialización
   cargarBuses(ruta.value, busSelect);
   generarPlanoAsientos();
   actualizarFechaHoraEnHeader();
   setInterval(actualizarFechaHoraEnHeader, 1000);
-
-const radios = document.querySelectorAll('input[name="pago"]');
-const pagoTarjeta = document.getElementById("pagoTarjeta");
-const comprobante = document.getElementById("comprobanteTransferencia");
-
-  radios.forEach((radio) => {
-  radio.addEventListener("change", () => {
-    if (radio.value === "tarjeta") {
-      pagoTarjeta.style.display = "block";
-      comprobante.style.display = "none";
-    } else {
-      pagoTarjeta.style.display = "none";
-      comprobante.style.display = "block";
-    }
-  });
-});
-
-  const formulario = document.getElementById("formulario");
-  formulario.addEventListener("submit", (e) => {
-    e.preventDefault();
-    if (validarCamposPasajero() && validarRuta() && validarFechaHora() && validarAsientos() && validarPago()) {
-      mostrarFactura();
-    }
-  });
-
   configurarValidacionesTiempoReal();
+  toggleMetodoPago(); // Llama una vez para el estado inicial
 });
 
-function bloquearLetras(input) {
-  input.addEventListener("input", () => {
-    input.value = input.value.replace(/\D/g, ""); // Solo números
-  });
-}
-function bloquearNumeros(input) {
-  input.addEventListener("input", () => {
-    input.value = input.value.replace(/[^a-zA-ZÁÉÍÓÚÑáéíóúñ\s]/g, ""); // Solo letras y espacios
-  });
-}
+// --- FUNCIÓN DE ENVÍO PRINCIPAL ---
+function enviarFormulario(event) {
+  event.preventDefault();
 
-function configurarValidacionesTiempoReal() {
-  const cedula = document.getElementById("cedula");
-  const nombre = document.getElementById("nombre");
-  const direccion = document.getElementById("direccion");
-  const telefono = document.getElementById("telefono");
-  const email = document.getElementById("email");
+  if (!validarFormularioCompleto()) {
+    return; // Detiene si la validación falla
+  }
+  
+  const btn = document.querySelector('.btn-confirmar');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
 
-  bloquearLetras(cedula);
-  bloquearLetras(telefono);
-  bloquearNumeros(nombre);
+  document.getElementById('asientos_hidden').value = asientosSeleccionados.join(', ');
 
-  cedula.addEventListener("input", () => {
-    cedula.value = cedula.value.replace(/[^\d]/g, "");
-    cedula.setCustomValidity(cedula.value.length !== 10 ? "Cédula debe tener 10 dígitos." : "");
-  });
-
-  // Nombre (solo letras)
-  nombre.addEventListener("input", () => {
-    nombre.value = nombre.value.replace(/[^a-zA-ZÁÉÍÓÚÑáéíóúñ\s]/g, "");
-    nombre.setCustomValidity(nombre.value.trim() === "" ? "Nombre requerido." : "");
-  });
-
-  // Dirección (texto libre)
-  direccion.addEventListener("input", () => {
-    direccion.setCustomValidity(direccion.value.trim() === "" ? "Dirección requerida." : "");
-  });
-
-  // Teléfono (solo números)
-  telefono.addEventListener("input", () => {
-    telefono.value = telefono.value.replace(/[^\d]/g, "");
-    telefono.setCustomValidity(telefono.value.length < 7 ? "Teléfono inválido." : "");
-  });
-
-  // Email
-  email.addEventListener("input", () => {
-    email.setCustomValidity(
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()) ? "" : "Correo inválido."
-    );
-  });
+  // RECUERDA: Si cambiaste los IDs, actualízalos aquí.
+  emailjs.sendForm('service_09xi3xh', 'template_c9xapgf', event.target)
+    .then(() => {
+        alert('¡Reserva confirmada! Hemos enviado la factura a tu correo.');
+        mostrarFactura(); // Muestra la factura y actualiza asientos
+    }, (error) => {
+        alert('Hubo un error al enviar el correo. Revisa la consola para más detalles.');
+        console.log('ERROR DE EMAILJS:', error);
+    }).finally(() => {
+        // Esto se ejecuta siempre, haya éxito o error
+        btn.disabled = false;
+        btn.textContent = 'Confirmar y Pagar';
+    });
 }
 
+// --- FUNCIONES DE VALIDACIÓN ---
+function validarFormularioCompleto() {
+    return validarCamposPasajero() && validarRuta() && validarFechaHora() && validarAsientos() && validarPago();
+}
+
+// (Tus funciones de validación completas, tal como las tenías)
 function validarCamposPasajero() {
   const cedula = document.getElementById("cedula").value.trim();
   const nombre = document.getElementById("nombre").value.trim();
@@ -223,7 +199,77 @@ function validarPago() {
   return valido;
 }
 
-// Asientos y funciones auxiliares
+// --- FUNCIONES AUXILIARES ---
+function mostrarFactura() {
+  const div = document.getElementById("factura-contenido");
+  const nombre = document.getElementById("nombre").value;
+  const cedula = document.getElementById("cedula").value;
+  const direccion = document.getElementById("direccion").value;
+  const telefono = document.getElementById("telefono").value;
+  const email = document.getElementById("email").value;
+  const ruta = document.getElementById("ruta").value;
+  const fechaSalida = document.getElementById("fechaSalida").value;
+  const horaSalida = document.getElementById("horaSalida").value;
+  const bus = document.getElementById("bus").value;
+
+  div.innerHTML = `
+       <h4 style="color:#003366;">👤 Información del Pasajero</h4>
+      <ul style="list-style:none; padding-left:0;">
+        <li><strong>Nombre:</strong> ${nombre}</li>
+        <li><strong>Cédula:</strong> ${cedula}</li>
+        <li><strong>Dirección:</strong> ${direccion}</li>
+        <li><strong>Teléfono:</strong> ${telefono}</li>
+        <li><strong>Email:</strong> ${email}</li>
+      </ul>
+      <h4 style="color:#003366;">🚌 Información del Viaje</h4>
+      <ul style="list-style:none; padding-left:0;">
+        <li><strong>Ruta:</strong> ${ruta}</li>
+        <li><strong>Fecha de salida:</strong> ${fechaSalida}</li>
+        <li><strong>Hora de salida:</strong> ${horaSalida}</li>
+        <li><strong>Bus asignado:</strong> ${bus}</li>
+        <li><strong>Asientos reservados:</strong> ${asientosSeleccionados.join(", ")}</li>
+      </ul>
+  `;
+  document.getElementById('factura').scrollIntoView({ behavior: 'smooth' });
+  
+  asientosReservados.push(...asientosSeleccionados);
+  asientosSeleccionados = [];
+  generarPlanoAsientos();
+}
+
+// --- FUNCIONES RESTAURADAS Y COMPLETAS ---
+function toggleMetodoPago() {
+    const pagoTarjeta = document.getElementById("pagoTarjeta");
+    const comprobanteDiv = document.getElementById("comprobanteTransferencia").parentElement.parentElement; // Apuntamos al .pago-card
+    if (document.getElementById('pagoTarjetaRadio').checked) {
+        pagoTarjeta.style.display = "block";
+        comprobanteDiv.style.opacity = '0.5';
+    } else {
+        pagoTarjeta.style.display = "none";
+        comprobanteDiv.style.opacity = '1';
+    }
+}
+
+function bloquearLetras(input) {
+  input.addEventListener("input", () => {
+    input.value = input.value.replace(/\D/g, ""); // Solo números
+  });
+}
+function bloquearNumeros(input) {
+  input.addEventListener("input", () => {
+    input.value = input.value.replace(/[^a-zA-ZÁÉÍÓÚÑáéíóúñ\s]/g, ""); // Solo letras y espacios
+  });
+}
+
+function configurarValidacionesTiempoReal() {
+  const cedula = document.getElementById("cedula");
+  const nombre = document.getElementById("nombre");
+  const telefono = document.getElementById("telefono");
+
+  bloquearLetras(cedula);
+  bloquearLetras(telefono);
+  bloquearNumeros(nombre);
+}
 
 function cargarBuses(ruta, select) {
   select.innerHTML = "";
@@ -243,9 +289,7 @@ function generarPlanoAsientos() {
   for (let fila = 0; fila < 10; fila++) {
     for (let col = 0; col < 5; col++) {
       if (col === 2) {
-        const espacio = document.createElement("div");
-        espacio.style.width = "30px";
-        contenedor.appendChild(espacio);
+        contenedor.appendChild(document.createElement("div"));
       } else {
         const btn = document.createElement("button");
         btn.className = "asiento-btn";
@@ -263,7 +307,6 @@ function generarPlanoAsientos() {
 function toggleAsiento(boton) {
   const num = parseInt(boton.dataset.numero);
   if (asientosReservados.includes(num)) return;
-
   const idx = asientosSeleccionados.indexOf(num);
   if (idx > -1) {
     asientosSeleccionados.splice(idx, 1);
@@ -272,14 +315,14 @@ function toggleAsiento(boton) {
     asientosSeleccionados.push(num);
     boton.classList.add("selected");
   }
-
-  document.getElementById("contador-asientos").textContent =
-    `Asientos seleccionados: ${asientosSeleccionados.length} / 40`;
+  document.getElementById("contador-asientos").textContent = `Asientos seleccionados: ${asientosSeleccionados.length} / 40`;
 }
 
 function actualizarPlano() {
   document.querySelectorAll(".asiento-btn").forEach(btn => {
     const num = parseInt(btn.dataset.numero);
+    btn.classList.remove("reserved");
+    btn.disabled = false;
     if (asientosReservados.includes(num)) {
       btn.classList.add("reserved");
       btn.disabled = true;
@@ -287,58 +330,15 @@ function actualizarPlano() {
   });
 }
 
-function mostrarFactura() {
-  const fechaHora = new Date().toLocaleString('es-EC');
-  const div = document.getElementById("factura-contenido");
-  const nombre = document.getElementById("nombre").value;
-  const cedula = document.getElementById("cedula").value;
-  const direccion = document.getElementById("direccion").value;
-  const telefono = document.getElementById("telefono").value;
-  const email = document.getElementById("email").value;
-  const ruta = document.getElementById("ruta").value;
-  const fechaSalida = document.getElementById("fechaSalida").value;
-  const horaSalida = document.getElementById("horaSalida").value;
-  const bus = document.getElementById("bus").value;
-
-
-  div.innerHTML = `
-       <h4 style="color:#003366;">👤 Información del Pasajero</h4>
-      <ul style="list-style:none; padding-left:0;">
-        <li><strong>Nombre:</strong> ${nombre}</li>
-        <li><strong>Cédula:</strong> ${cedula}</li>
-        <li><strong>Dirección:</strong> ${direccion}</li>
-        <li><strong>Teléfono:</strong> ${telefono}</li>
-        <li><strong>Email:</strong> ${email}</li>
-      </ul>
-
-      <h4 style="color:#003366;">🚌 Información del Viaje</h4>
-      <ul style="list-style:none; padding-left:0;">
-        <li><strong>Ruta:</strong> ${ruta}</li>
-        <li><strong>Fecha de salida:</strong> ${fechaSalida}</li>
-        <li><strong>Hora de salida:</strong> ${horaSalida}</li>
-        <li><strong>Bus asignado:</strong> ${bus}</li>
-      </ul>
-
-    <p>Asientos reservados: ${asientosSeleccionados.join(", ")}</p>
-  `;
-  asientosReservados.push(...asientosSeleccionados);
-  asientosSeleccionados = [];
-  generarPlanoAsientos();
-}
-
 function nuevaReservacion() {
   document.getElementById("formulario").reset();
   asientosSeleccionados = [];
-  asientosReservados = [];
   generarPlanoAsientos();
-  document.getElementById("pagoTarjeta").style.display = "none";
-  document.getElementById("comprobanteTransferencia").style.display = "none";
   document.getElementById("factura-contenido").innerHTML = "";
+  toggleMetodoPago();
 }
 
 function actualizarFechaHoraEnHeader() {
   const now = new Date();
-  const fecha = now.toLocaleDateString('es-EC');
-  const hora = now.toLocaleTimeString('es-EC');
-  document.getElementById("fecha-hora").textContent = `${fecha} ${hora}`;
+  document.getElementById("fecha-hora").textContent = `${now.toLocaleDateString('es-EC')} ${now.toLocaleTimeString('es-EC')}`;
 }
