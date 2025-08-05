@@ -271,6 +271,7 @@ function generarPlanoAsientos() {
         btn.className = "asiento-btn";
         btn.textContent = n;
         btn.dataset.numero = n;
+        btn.setAttribute('aria-label', `Asiento número ${n}, disponible`);
         btn.addEventListener("click", () => toggleAsiento(btn));
         contenedor.appendChild(btn);
         n++;
@@ -287,9 +288,11 @@ function toggleAsiento(boton) {
   if (idx > -1) {
     asientosSeleccionados.splice(idx, 1);
     boton.classList.remove("selected");
+    boton.setAttribute('aria-label', `Asiento número ${num}, disponible`); // Actualiza etiqueta
   } else {
     asientosSeleccionados.push(num);
     boton.classList.add("selected");
+    boton.setAttribute('aria-label', `Asiento número ${num}, disponible`); // Actualiza etiqueta
   }
   document.getElementById("contador-asientos").textContent = `Asientos seleccionados: ${asientosSeleccionados.length} / 40`;
 }

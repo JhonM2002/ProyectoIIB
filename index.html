@@ -6,21 +6,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Reserva de Asientos - Cooperativa</title>
   <link rel="stylesheet" href="style.css" />
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <!-- Script de EmailJS movido al final del body para un mejor rendimiento -->
 </head>
 
 <body>
   <header class="header-fijo">
     <div class="header-contenido">
       <h1>Reserva de Asientos
-        <div id="fecha-hora"></div>
+        <!-- aria-live anuncia los cambios en la hora -->
+        <div id="fecha-hora" aria-live="polite"></div>
       </h1>
     </div>
-
   </header>
 
   <main>
-    <div class="progress-bar">
+    <!-- aria-label da contexto a la barra de progreso -->
+    <div class="progress-bar" role="navigation" aria-label="Progreso del formulario">
       <div class="step active" data-step="0">
         <div class="circle">1</div>
         <p>Pasajero</p>
@@ -38,49 +39,48 @@
     </div>
     <form id="formulario" novalidate>
       <!-- 1. Datos del Pasajero -->
-      <section id="pasajero" class="form-section">
-        <h2>Datos del Pasajero</h2>
+      <section id="pasajero" class="form-section" role="region" aria-labelledby="pasajero-titulo">
+        <h2 id="pasajero-titulo">Datos del Pasajero</h2>
 
         <label for="cedula">Cédula:</label>
-        <input type="text" id="cedula" name="cedula" placeholder="Cédula" required />
-        <div class="error-message" id="cedula-error"></div>
+        <!-- aria-describedby conecta el input con su mensaje de error -->
+        <input type="text" id="cedula" name="cedula" placeholder="Cédula" required aria-describedby="cedula-error" />
+        <div class="error-message" id="cedula-error" role="alert"></div>
 
         <label for="nombre">Nombre:</label>
-        <input type="text" id="nombre" name="nombre" placeholder="Nombre completo" required />
-        <div class="error-message" id="nombre-error"></div>
+        <input type="text" id="nombre" name="nombre" placeholder="Nombre completo" required aria-describedby="nombre-error" />
+        <div class="error-message" id="nombre-error" role="alert"></div>
 
         <label for="direccion">Dirección:</label>
-        <input type="text" id="direccion" name="direccion" placeholder="Dirección" required />
-        <div class="error-message" id="direccion-error"></div>
+        <input type="text" id="direccion" name="direccion" placeholder="Dirección" required aria-describedby="direccion-error" />
+        <div class="error-message" id="direccion-error" role="alert"></div>
 
         <label for="telefono">Celular:</label>
-        <input type="text" id="telefono" name="telefono" placeholder="Celular" required />
-        <div class="error-message" id="telefono-error"></div>
+        <input type="text" id="telefono" name="telefono" placeholder="Celular" required aria-describedby="telefono-error" />
+        <div class="error-message" id="telefono-error" role="alert"></div>
 
         <label for="email">Correo electrónico:</label>
-        <input type="email" id="email" name="email" placeholder="Correo electrónico" required />
-        <div class="error-message" id="email-error"></div>
+        <input type="email" id="email" name="email" placeholder="Correo electrónico" required aria-describedby="email-error" />
+        <div class="error-message" id="email-error" role="alert"></div>
 
         <div class="navigation-buttons">
-          <button type="button" class="btn-next">Siguiente →</button>
+          <button type="button" class="btn-next" aria-label="Siguiente paso, datos del viaje">Siguiente →</button>
         </div>
       </section>
 
       <!-- 2. Datos del Viaje -->
-      <section id="viaje" class="form-section">
-        <h2>Datos del Viaje</h2>
-        <label>Ruta:
-          <select id="ruta" name="ruta" required>
+      <section id="viaje" class="form-section" role="region" aria-labelledby="viaje-titulo">
+        <h2 id="viaje-titulo">Datos del Viaje</h2>
+        <label for="ruta">Ruta:</label>
+        <select id="ruta" name="ruta" required>
             <option value="">Seleccione una ruta</option>
             <option>Quito-Guayaquil</option>
             <option>Quito-Tulcán</option>
             <option>Quito-Loja</option>
             <option>Quito-Lago Agrio</option>
             <option>Quito-Esmeraldas</option>
-          </select>
-        </label>
+        </select>
 
-        <!-- Frecuencia: fecha y hora -->
         <div class="form-group">
           <label for="fechaSalida">Fecha de salida:</label>
           <input type="date" id="fechaSalida" name="fechaSalida" required>
@@ -90,37 +90,38 @@
           <input type="time" id="horaSalida" name="horaSalida" required>
         </div>
 
-        <label>Bus:
-          <select id="bus" name="bus" required></select>
-        </label>
+        <label for="bus">Bus:</label>
+        <select id="bus" name="bus" required></select>
 
-        <h3>Selección de Asientos (máximo 40)</h3>
-        <div class="etiquetas-asientos">
+        <h3 id="asientos-titulo">Selección de Asientos (máximo 40)</h3>
+        <div class="etiquetas-asientos" aria-hidden="true">
           <span>Ventana<br>Izquierda</span>
           <span>Pasillo<br>Izquierdo</span>
           <span></span>
           <span>Pasillo<br>Derecho</span>
           <span>Ventana<br>Derecha</span>
         </div>
-        <div id="plano-asientos"></div>
-        <p id="contador-asientos">Asientos seleccionados: 0 / 40</p>
+        <!-- aria-labelledby da contexto al plano de asientos -->
+        <div id="plano-asientos" role="grid" aria-labelledby="asientos-titulo"></div>
+        <!-- aria-live anuncia los cambios en el contador de asientos -->
+        <p id="contador-asientos" aria-live="polite">Asientos seleccionados: 0 / 40</p>
         <input type="hidden" name="asientos" id="asientos_hidden">
 
         <div class="navigation-buttons">
-          <button type="button" class="btn-prev">← Anterior</button>
-          <button type="button" class="btn-next">Siguiente →</button>
+          <button type="button" class="btn-prev" aria-label="Paso anterior, datos del pasajero">← Anterior</button>
+          <button type="button" class="btn-next" aria-label="Siguiente paso, pago">Siguiente →</button>
         </div>
       </section>
 
       <!-- 3. Pago -->
-      <section id="pago" class="form-section">
-        <h2>Pago</h2>
-        <div class="metodo-pago">
+      <section id="pago" class="form-section" role="region" aria-labelledby="pago-titulo">
+        <h2 id="pago-titulo">Pago</h2>
+        <div class="metodo-pago" role="radiogroup" aria-labelledby="pago-titulo">
           <label class="pago-option">
             <input type="radio" name="pago" value="transferencia" id="pagoTransferencia" checked />
             <div class="pago-card">
               <strong>Transferencia bancaria</strong>
-              <input type="file" id="comprobanteTransferencia" accept=".pdf,.jpg,.png" />
+              <input type="file" id="comprobanteTransferencia" aria-label="Subir comprobante de transferencia" accept=".pdf,.jpg,.png" />
             </div>
           </label>
 
@@ -129,40 +130,42 @@
             <div class="pago-card">
               <strong>Tarjeta de crédito/débito</strong>
               <div id="pagoTarjeta" style="display: none;">
-                <select id="tipoTarjeta" required>
+                <label for="tipoTarjeta" class="sr-only">Tipo de tarjeta</label>
+                <select id="tipoTarjeta" name="tipoTarjeta" required>
                   <option value="">Tipo de tarjeta</option>
                   <option value="debito">Débito</option>
                   <option value="credito">Crédito</option>
                 </select>
-                <input type="text" id="numTarjeta" placeholder="Número de tarjeta" />
-                <input type="text" id="nombreTitular" placeholder="Nombre como aparece en tarjeta" />
-                <input type="text" id="vencimiento" placeholder="MM/AA" />
-                <input type="text" id="cvv" placeholder="CVV" />
+                <label for="numTarjeta" class="sr-only">Número de tarjeta</label>
+                <input type="text" id="numTarjeta" name="numTarjeta" placeholder="Número de tarjeta" />
+                <label for="nombreTitular" class="sr-only">Nombre como aparece en tarjeta</label>
+                <input type="text" id="nombreTitular" name="nombreTitular" placeholder="Nombre como aparece en tarjeta" />
+                <label for="vencimiento" class="sr-only">Fecha de vencimiento</label>
+                <input type="text" id="vencimiento" name="vencimiento" placeholder="MM/AA" />
+                <label for="cvv" class="sr-only">CVV</label>
+                <input type="text" id="cvv" name="cvv" placeholder="CVV" />
               </div>
             </div>
           </label>
         </div>
         <div class="navigation-buttons">
-          <button type="button" class="btn-prev">← Anterior</button>
+          <button type="button" class="btn-prev" aria-label="Paso anterior, datos del viaje">← Anterior</button>
           <button type="submit" class="btn btn-confirmar">Confirmar y Pagar</button>
         </div>
       </section>
 
       <!-- 4. Factura -->
-      <section id="factura" class="form-section">
-        <h2>Factura Generada</h2>
-        <div id="factura-contenido"></div>
-
-        <div class="form-section">
-          <a href="index.html" class="btn-recargar">Nueva Reservación</a>
-        </div>
+      <section id="factura" class="form-section" role="region" aria-labelledby="factura-titulo">
+        <h2 id="factura-titulo">Factura Generada</h2>
+        <!-- aria-live anuncia cuando el contenido de la factura aparece -->
+        <div id="factura-contenido" aria-live="assertive"></div>
+        <a href="index.html" class="btn-recargar">Nueva Reservación</a>
       </section>
-
-
-
     </form>
   </main>
 
+  <!-- Scripts al final para mejor rendimiento -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <script src="script.js"></script>
 </body>
 
